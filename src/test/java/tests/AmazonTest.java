@@ -1,5 +1,6 @@
 package tests;
 
+import drivers.BrowserDriver;
 import io.github.bonigarcia.wdm.WebDriverManager;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
@@ -14,10 +15,6 @@ import pages.AmazonResultados;
 
 public class AmazonTest {
 
-
-    private WebDriver driver;
-    private WebDriverWait wait;
-
     @DataProvider(name = "paises")
     public Object[][] dataProviderDePaises() {
         return new Object[][] { {"Brasil"}, {"Uruguay"}, {"Chile"}, {"Argentina"} };
@@ -30,37 +27,33 @@ public class AmazonTest {
 
     @BeforeClass
     public void beforeClass() {
-        WebDriverManager.chromedriver().setup();
-        driver = new ChromeDriver();
-        wait = new WebDriverWait(driver, 20);
-        driver.manage().window().maximize();
+
     }
 
     @BeforeMethod
     public void beforeMethod() {
-        driver.get("https://www.amazon.com/");
-    }
-
-    @Test(dataProvider = "paises")
-    public void testAmazon(String pais) {
-        WebElement barraDeBusqueda = wait.until(ExpectedConditions.elementToBeClickable(By.id("twotabsearchtextbox")));
-        barraDeBusqueda.sendKeys(pais);
-        WebElement botonDeBusqueda = wait.until(ExpectedConditions.elementToBeClickable(By.xpath("(//input[contains(@class,'nav-input nav-progressive-attribute')])[last()]")));
-        botonDeBusqueda.click();
-        WebElement primerResultado = wait.until(ExpectedConditions.elementToBeClickable(By.xpath("(//h2[contains(@class,'a-size-mini')]//span)[1]")));
-        String tituloDelPrimerResultado = primerResultado.getText();
-        System.out.println(tituloDelPrimerResultado);
-        Assert.assertTrue(tituloDelPrimerResultado.contains(pais), "el titulo del primer resultado no contiene la palabra " + pais);
+        BrowserDriver.getInstance().getBrowserDriver().get("https://www.amazon.com/");
     }
 
 
     @Test(dataProvider = "paises")
     public void testAmazonPageObject(String pais) {
-        AmazonHome amazonHome = new AmazonHome(this.driver);
+        AmazonHome amazonHome = new AmazonHome();
         AmazonResultados amazonResultados =amazonHome.realizarBusqueda(pais);
         String resultado = amazonResultados.obtenerResultado(3).getText();
         System.out.println(resultado);
         Assert.assertTrue(resultado.contains(pais), "el titulo del primer resultado no contiene la palabra " + pais);
+    }
+
+    @Test
+    public void testAmazonPageObjectSinDP() {
+        AmazonHome amazonHome = new AmazonHome();
+        AmazonResultados amazonResultados =amazonHome.realizarBusqueda("Brasil");
+        String resultado = amazonResultados.obtenerResultado(3).getText();
+        Assert.assertTrue(resultado.contains("Brasil"), "el titulo del primer resultado no contiene la palabra " + "Brasil");
+        amazonResultados = amazonResultados.realizarBusqueda("Uruguay");
+        amazonResultados = amazonResultados.realizarBusqueda("Chile");
+        amazonResultados.realizarBusqueda("Argentina");
     }
 
 
@@ -71,7 +64,7 @@ public class AmazonTest {
 
     @AfterClass
     public void afterClass() {
-        driver.quit();
+        BrowserDriver.getInstance().closeDriver();
     }
 
 
